@@ -4,6 +4,7 @@ import subprocess
 import tempfile
 from duckduckgo_search import DDGS
 import pandas as pd
+from crewai import Agent, Task, Crew
 
 
 # OPENAI CLIENT
@@ -85,7 +86,42 @@ with st.sidebar:
 st.caption(
     "Chat • Generate Code • Run Code • Take User Input"
 )
+# AUTONOMOUS AI AGENT
+def autonomous_task(user_task):
 
+    researcher = Agent(
+        role="Researcher",
+        goal="Search and collect useful information",
+        backstory="Expert internet researcher",
+        verbose=True
+    )
+
+    analyst = Agent(
+        role="Analyst",
+        goal="Analyze and summarize information",
+        backstory="Expert AI analyst",
+        verbose=True
+    )
+
+    task1 = Task(
+        description=f"Research this topic: {user_task}",
+        agent=researcher
+    )
+
+    task2 = Task(
+        description=f"Analyze and summarize findings about: {user_task}",
+        agent=analyst
+    )
+
+    crew = Crew(
+        agents=[researcher, analyst],
+        tasks=[task1, task2],
+        verbose=True
+    )
+
+    result = crew.kickoff()
+
+    return result
 # SHOW OLD CHATS
 for msg in st.session_state.messages:
 
@@ -126,6 +162,16 @@ if prompt and "search" in prompt.lower():
 
 if prompt:
 
+    # AUTONOMOUS MODE
+    if "research" in prompt.lower():
+
+        with st.spinner("AI Agent Working..."):
+
+            result = autonomous_task(prompt)
+
+            st.write(result)
+
+        st.stop()
     # SAVE USER MESSAGE
     st.session_state.messages.append({
         "role": "user",
