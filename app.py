@@ -335,19 +335,22 @@ If user asks normal questions,
 respond normally.
 """
 
-    # AI RESPONSE
-    response = client.chat.completions.create(
-        model="gpt-4.1-mini",
-        messages=[
-            {
-                "role": "system",
-                "content": system_prompt
-            },
-            *st.session_state.messages
-        ]
-    )
+   
+# AI RESPONSE
+response = client.chat.completions.create(
+    model="gpt-4.1-mini",
+    messages=[
+        {
+            "role": "system",
+            "content": system_prompt
+        },
+        *st.session_state.messages
+    ]
+)
 
 reply = response.choices[0].message.content
+
+
 
 
 # SAVE AI MESSAGE
