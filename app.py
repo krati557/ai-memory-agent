@@ -236,6 +236,7 @@ for msg in st.session_state.messages:
 # USER INPUT
 prompt = st.chat_input("Ask anything...")
 
+
 if prompt:
 
     # SAVE USER MESSAGE
@@ -335,134 +336,130 @@ If user asks normal questions,
 respond normally.
 """
 
-   
-# AI RESPONSE
-response = client.chat.completions.create(
-    model="gpt-4.1-mini",
-    messages=[
-        {
-            "role": "system",
-            "content": system_prompt
-        },
-        *st.session_state.messages
-    ]
-)
+    # AI RESPONSE
+    response = client.chat.completions.create(
+        model="gpt-4.1-mini",
+        messages=[
+            {
+                "role": "system",
+                "content": system_prompt
+            },
+            *st.session_state.messages
+        ]
+    )
 
-reply = response.choices[0].message.content
+    reply = response.choices[0].message.content
 
+    # SAVE AI MESSAGE
+    st.session_state.messages.append({
+        "role": "assistant",
+        "content": reply
+    })
 
+    save_chat()
 
+    # SHOW AI MESSAGE
+    with st.chat_message("assistant"):
 
-# SAVE AI MESSAGE
-st.session_state.messages.append({
-    "role": "assistant",
-    "content": reply
-})
+        st.markdown(reply)
 
-save_chat()
+        # CODE DETECT
+        if "```" in reply:
 
-# SHOW AI MESSAGE
-with st.chat_message("assistant"):
+            try:
 
-    st.markdown(reply)
+                block = reply.split("```")[1]
 
-    # CODE DETECT
-    if "```" in reply:
+                language = block.split("\n")[0].strip()
 
-        try:
+                code = block.split("\n", 1)[1]
 
-            block = reply.split("```")[1]
+                code = code.rsplit("```", 1)[0]
 
-            language = block.split("\n")[0].strip()
+                st.code(code, language=language)
 
-            code = block.split("\n", 1)[1]
+                # INPUT BOX
+                user_input = st.text_input(
+                    "Enter Input",
+                    key=f"input_{language}"
+                )
 
-            code = code.rsplit("```", 1)[0]
+                # RUN BUTTON
+                run_btn = st.button(
+                    "▶ Run Code",
+                    key=f"run_{language}"
+                )
 
-            st.code(code, language=language)
+                if run_btn:
 
-            # INPUT BOX
-            user_input = st.text_input(
-                "Enter Input",
-                key=f"input_{language}"
-            )
+                    output = ""
 
-            # RUN BUTTON
-            run_btn = st.button(
-                "▶ Run Code",
-                key=f"run_{language}"
-            )
+                    # PYTHON
+                    if language == "python":
 
-            if run_btn:
+                        with tempfile.NamedTemporaryFile(
+                            suffix=".py",
+                            delete=False,
+                            mode="w"
+                        ) as f:
 
-                output = ""
+                            f.write(code)
 
-                # PYTHON
-                if language == "python":
+                            filename = f.name
 
-                    with tempfile.NamedTemporaryFile(
-                        suffix=".py",
-                        delete=False,
-                        mode="w"
-                    ) as f:
+                        result = subprocess.run(
+                            ["python3", filename],
+                            input=user_input + "\n",
+                            capture_output=True,
+                            text=True
+                        )
 
-                        f.write(code)
+                        output = result.stdout + result.stderr
 
-                        filename = f.name
+                    # JAVA
+                    elif language == "java":
 
-                    result = subprocess.run(
-                        ["python3", filename],
-                        input=user_input + "\n",
-                        capture_output=True,
-                        text=True
-                    )
+                        with open("Main.java", "w") as f:
+                            f.write(code)
 
-                    output = result.stdout + result.stderr
+                        subprocess.run(
+                            ["javac", "Main.java"]
+                        )
 
-                # JAVA
-                elif language == "java":
+                        result = subprocess.run(
+                            ["java", "Main"],
+                            input=user_input + "\n",
+                            capture_output=True,
+                            text=True
+                        )
 
-                    with open("Main.java", "w") as f:
-                        f.write(code)
+                        output = result.stdout + result.stderr
 
-                    subprocess.run(
-                        ["javac", "Main.java"]
-                    )
+                    # JAVASCRIPT
+                    elif language in ["javascript", "js"]:
 
-                    result = subprocess.run(
-                        ["java", "Main"],
-                        input=user_input + "\n",
-                        capture_output=True,
-                        text=True
-                    )
+                        with open("temp.js", "w") as f:
+                            f.write(code)
 
-                    output = result.stdout + result.stderr
+                        result = subprocess.run(
+                            ["node", "temp.js"],
+                            input=user_input + "\n",
+                            capture_output=True,
+                            text=True
+                        )
 
-                # JAVASCRIPT
-                elif language in ["javascript", "js"]:
+                        output = result.stdout + result.stderr
 
-                    with open("temp.js", "w") as f:
-                        f.write(code)
+                    else:
 
-                    result = subprocess.run(
-                        ["node", "temp.js"],
-                        input=user_input + "\n",
-                        capture_output=True,
-                        text=True
-                    )
+                        output = "Language not supported yet"
 
-                    output = result.stdout + result.stderr
+                    # SHOW OUTPUT
+                    st.markdown("### Output")
 
-                else:
+                    st.code(output)
 
-                    output = "Language not supported yet"
+            except Exception as e:
 
-                # SHOW OUTPUT
-                st.markdown("### Output")
-
-                st.code(output)
-
-        except Exception as e:
-
-            st.error(str(e))
+                st.error(str(e))
 
