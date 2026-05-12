@@ -207,10 +207,7 @@ if filtered_chats:
         # OPEN CHAT
         with col1:
 
-            if st.button(
-                f"💬 {chat_name}",
-                key=f"open_{chat_name}"
-            ):
+            if st.button(f"💬 {chat_name}", key=chat_name):
 
                 st.session_state.messages = load_chat_file(chat_file)
 
@@ -221,14 +218,9 @@ if filtered_chats:
         # DELETE CHAT
         with col2:
 
-            if st.button(
-                "❌",
-                key=f"delete_{chat_name}"
-            ):
+            if st.button("❌", key=f"delete_{chat_name}"):
 
-                os.remove(
-                    f"{CHAT_FOLDER}/{chat_file}"
-                )
+                os.remove(f"{CHAT_FOLDER}/{chat_file}")
 
                 st.rerun()
 
