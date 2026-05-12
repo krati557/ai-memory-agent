@@ -1,7 +1,7 @@
 import streamlit as st
 from openai import OpenAI
 import subprocess
-import tempfile         
+import tempfile
 from duckduckgo_search import DDGS
 import json
 import os
@@ -10,33 +10,34 @@ import requests
 from bs4 import BeautifulSoup
 
 
-    # OPENAI CLIENT
+# OPENAI CLIENT
 client = OpenAI(
-        api_key=st.secrets["OPENAI_API_KEY"]
-    )
+    api_key=st.secrets["OPENAI_API_KEY"]
+)
 
-    # PAGE CONFIG
+# PAGE CONFIG
 st.set_page_config(
-        page_title="Autonomous AI Agent",
-        page_icon="🤖",
-        layout="wide"
-    )
+    page_title="Autonomous AI Agent",
+    page_icon="🤖",
+    layout="wide"
+)
 
-    # CHAT STORAGE
+# CHAT STORAGE
 CHAT_FOLDER = "chats"
 
 if not os.path.exists(CHAT_FOLDER):
-        os.makedirs(CHAT_FOLDER)
+    os.makedirs(CHAT_FOLDER)
 
-    # SESSION STATE
+# SESSION STATE
 if "messages" not in st.session_state:
-        st.session_state.messages = []
+    st.session_state.messages = []
 
 if "chat_id" not in st.session_state:
-        st.session_state.chat_id = datetime.now().strftime("%Y%m%d_%H%M%S")
+    st.session_state.chat_id = datetime.now().strftime("%Y%m%d_%H%M%S")
 
- if "current_project" not in st.session_state:
-        st.session_state.current_project = "general"
+if "current_project" not in st.session_state:
+    st.session_state.current_project = "general"
+
 
     # SAVE CHAT
 def save_chat():
