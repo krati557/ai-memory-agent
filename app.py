@@ -613,31 +613,43 @@ Use these memories while responding.
 
          st.markdown(reply)
 
-    # CODE DETECTION
-        if "```" in reply:
-        try:
+    
 
-            block = reply.split("```")[1]
+# CODE DETECTION
+if "```" in reply:
 
-            language = block.split("\n")[0].strip()
+    try:
 
-            code = block.split("\n", 1)[1]
+        block = reply.split("```")[1]
 
-            code = code.rsplit("```", 1)[0]
+        language = block.split("\n")[0].strip()
 
-            st.code(code, language=language)
+        code = block.split("\n", 1)[1]
 
-            user_input = st.text_input(
+        code = code.rsplit("```", 1)[0]
+
+        st.code(code, language=language)
+
+    except Exception as e:
+
+        st.error(str(e))
+
+
+
+
+    st.code(code, language=language)
+
+    user_input = st.text_input(
                 "Enter Input",
                 key=f"input_{language}"
             )
 
-            run_btn = st.button(
+    run_btn = st.button(
                 "▶ Run Code",
                 key=f"run_{language}"
             )
 
-            if run_btn:
+    if run_btn:
 
                 output = ""
 
@@ -707,7 +719,7 @@ Use these memories while responding.
 
                 st.code(output)
 
-        except Exception as e:
+            except Exception as e:
 
-            st.error(str(e))
+    st.error(str(e))
 
