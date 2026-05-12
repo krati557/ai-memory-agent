@@ -167,16 +167,21 @@ if prompt and "search" in prompt.lower():
 if prompt:
 
     # AUTONOMOUS MODE
-    if "research" in prompt.lower():
+   if "research" in prompt.lower():
 
-        with st.spinner("AI Agent Thinking..."):
+    with st.spinner("AI Agent Thinking..."):
 
-            result = autonomous_agent(prompt)
+        result = autonomous_agent(prompt)
 
-            st.write(result)
+        st.session_state.messages.append({
+            "role": "assistant",
+            "content": result
+        })
 
-        st.stop()
+        with st.chat_message("assistant"):
+            st.markdown(result)
 
+    st.stop()
     # SAVE USER MESSAGE
     st.session_state.messages.append({
         "role": "user",
