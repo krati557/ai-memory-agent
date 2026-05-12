@@ -230,8 +230,6 @@ if filtered_chats:
                     f"{CHAT_FOLDER}/{chat_file}"
                 )
 
-                st.success("Chat Deleted")
-
                 st.rerun()
 
 else:
