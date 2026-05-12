@@ -489,66 +489,213 @@ Use these memories while responding.
 
         st.markdown(reply)
 
-        # CODE DETECTION
-        if reply and "```" in reply:
+        
+# CODE DETECTION
+if reply and "```" in reply:
 
-            try:
+    try:
 
-                block = reply.split("```")[1]
+        block = reply.split("```")[1]
 
-                language = block.split("\n")[0].strip()
+        language = block.split("\n")[0].strip().lower()
 
-                code = block.split("\n", 1)[1]
+        code = block.split("\n", 1)[1]
 
-                code = code.rsplit("```", 1)[0]
+        code = code.rsplit("```", 1)[0]
 
-                st.code(code, language=language)
+        st.code(code, language=language)
 
-                user_input = st.text_input(
-                    "Enter Input",
-                    key=f"input_{language}"
+        user_input = st.text_input(
+            "Enter Input",
+            key=f"input_{language}"
+        )
+
+        run_btn = st.button(
+            "▶ Run Code",
+            key=f"run_{language}"
+        )
+
+        if run_btn:
+
+            output = ""
+
+            # ---------------- PYTHON ----------------
+            if language == "python":
+
+                with tempfile.NamedTemporaryFile(
+                    suffix=".py",
+                    delete=False,
+                    mode="w"
+                ) as f:
+
+                    f.write(code)
+
+                    filename = f.name
+
+                result = subprocess.run(
+                    ["python3", filename],
+                    input=user_input + "\n",
+                    capture_output=True,
+                    text=True
                 )
 
-                run_btn = st.button(
-                    "▶ Run Code",
-                    key=f"run_{language}"
+                output = result.stdout + result.stderr
+
+            # ---------------- JAVA ----------------
+            elif language == "java":
+
+                with open("Main.java", "w") as f:
+
+                    f.write(code)
+
+                subprocess.run(
+                    ["javac", "Main.java"],
+                    capture_output=True,
+                    text=True
                 )
 
-                if run_btn:
+                result = subprocess.run(
+                    ["java", "Main"],
+                    input=user_input + "\n",
+                    capture_output=True,
+                    text=True
+                )
 
-                    output = ""
+                output = result.stdout + result.stderr
 
-                    # PYTHON
-                    if language == "python":
+            # ---------------- JAVASCRIPT ----------------
+            elif language in ["javascript", "js"]:
 
-                        with tempfile.NamedTemporaryFile(
-                            suffix=".py",
-                            delete=False,
-                            mode="w"
-                        ) as f:
+                with open("temp.js", "w") as f:
 
-                            f.write(code)
+                    f.write(code)
 
-                            filename = f.name
+                result = subprocess.run(
+                    ["node", "temp.js"],
+                    input=user_input + "\n",
+                    capture_output=True,
+                    text=True
+                )
 
-                        result = subprocess.run(
-                            ["python3", filename],
-                            input=user_input + "\n",
-                            capture_output=True,
-                            text=True
-                        )
+                output = result.stdout + result.stderr
 
-                        output = result.stdout + result.stderr
+            # ---------------- C ----------------
+            elif language == "c":
 
-                    else:
+                with open("main.c", "w") as f:
 
-                        output = "Language not supported yet"
+                    f.write(code)
 
-                    st.markdown("### Output")
+                subprocess.run(
+                    ["gcc", "main.c", "-o", "main"],
+                    capture_output=True,
+                    text=True
+                )
 
-                    st.code(output)
+                result = subprocess.run(
+                    ["./main"],
+                    input=user_input + "\n",
+                    capture_output=True,
+                    text=True
+                )
 
-            except Exception as e:
+                output = result.stdout + result.stderr
 
-                st.error(str(e))
+            # ---------------- C++ ----------------
+            elif language in ["cpp", "c++"]:
+
+                with open("main.cpp", "w") as f:
+
+                    f.write(code)
+
+                subprocess.run(
+                    ["g++", "main.cpp", "-o", "main"],
+                    capture_output=True,
+                    text=True
+                )
+
+                result = subprocess.run(
+                    ["./main"],
+                    input=user_input + "\n",
+                    capture_output=True,
+                    text=True
+                )
+
+                output = result.stdout + result.stderr
+
+            # ---------------- GO ----------------
+            elif language == "go":
+
+                with open("main.go", "w") as f:
+
+                    f.write(code)
+
+                result = subprocess.run(
+                    ["go", "run", "main.go"],
+                    input=user_input + "\n",
+                    capture_output=True,
+                    text=True
+                )
+
+                output = result.stdout + result.stderr
+
+            # ---------------- RUBY ----------------
+            elif language == "ruby":
+
+                with open("main.rb", "w") as f:
+
+                    f.write(code)
+
+                result = subprocess.run(
+                    ["ruby", "main.rb"],
+                    input=user_input + "\n",
+                    capture_output=True,
+                    text=True
+                )
+
+                output = result.stdout + result.stderr
+
+            # ---------------- PHP ----------------
+            elif language == "php":
+
+                with open("main.php", "w") as f:
+
+                    f.write(code)
+
+                result = subprocess.run(
+                    ["php", "main.php"],
+                    input=user_input + "\n",
+                    capture_output=True,
+                    text=True
+                )
+
+                output = result.stdout + result.stderr
+
+            # ---------------- BASH ----------------
+            elif language in ["bash", "sh"]:
+
+                with open("script.sh", "w") as f:
+
+                    f.write(code)
+
+                result = subprocess.run(
+                    ["bash", "script.sh"],
+                    input=user_input + "\n",
+                    capture_output=True,
+                    text=True
+                )
+
+                output = result.stdout + result.stderr
+
+            else:
+
+                output = f"{language} not supported yet"
+
+            st.markdown("### Output")
+
+            st.code(output)
+
+    except Exception as e:
+
+        st.error(str(e))
 
