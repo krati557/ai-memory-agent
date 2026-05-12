@@ -630,96 +630,87 @@ if "```" in reply:
 
         st.code(code, language=language)
 
+        user_input = st.text_input(
+            "Enter Input",
+            key=f"input_{language}"
+        )
+
+        run_btn = st.button(
+            "▶ Run Code",
+            key=f"run_{language}"
+        )
+
+        if run_btn:
+
+            output = ""
+
+            # PYTHON
+            if language == "python":
+
+                with tempfile.NamedTemporaryFile(
+                    suffix=".py",
+                    delete=False,
+                    mode="w"
+                ) as f:
+
+                    f.write(code)
+
+                    filename = f.name
+
+                result = subprocess.run(
+                    ["python3", filename],
+                    input=user_input + "\n",
+                    capture_output=True,
+                    text=True
+                )
+
+                output = result.stdout + result.stderr
+
+            # JAVA
+            elif language == "java":
+
+                with open("Main.java", "w") as f:
+
+                    f.write(code)
+
+                subprocess.run(
+                    ["javac", "Main.java"]
+                )
+
+                result = subprocess.run(
+                    ["java", "Main"],
+                    input=user_input + "\n",
+                    capture_output=True,
+                    text=True
+                )
+
+                output = result.stdout + result.stderr
+
+            # JAVASCRIPT
+            elif language in ["javascript", "js"]:
+
+                with open("temp.js", "w") as f:
+
+                    f.write(code)
+
+                result = subprocess.run(
+                    ["node", "temp.js"],
+                    input=user_input + "\n",
+                    capture_output=True,
+                    text=True
+                )
+
+                output = result.stdout + result.stderr
+
+            else:
+
+                output = "Language not supported yet"
+
+            st.markdown("### Output")
+
+            st.code(output)
+
     except Exception as e:
 
         st.error(str(e))
-
-
-
-
-    st.code(code, language=language)
-
-    user_input = st.text_input(
-                "Enter Input",
-                key=f"input_{language}"
-            )
-
-    run_btn = st.button(
-                "▶ Run Code",
-                key=f"run_{language}"
-            )
-
-    if run_btn:
-
-                output = ""
-
-                # PYTHON
-                if language == "python":
-
-                    with tempfile.NamedTemporaryFile(
-                        suffix=".py",
-                        delete=False,
-                        mode="w"
-                    ) as f:
-
-                        f.write(code)
-
-                        filename = f.name
-
-                    result = subprocess.run(
-                        ["python3", filename],
-                        input=user_input + "\n",
-                        capture_output=True,
-                        text=True
-                    )
-
-                    output = result.stdout + result.stderr
-
-                # JAVA
-                elif language == "java":
-
-                    with open("Main.java", "w") as f:
-
-                        f.write(code)
-
-                    subprocess.run(
-                        ["javac", "Main.java"]
-                    )
-
-                    result = subprocess.run(
-                        ["java", "Main"],
-                        input=user_input + "\n",
-                        capture_output=True,
-                        text=True
-                    )
-
-                    output = result.stdout + result.stderr
-
-                # JAVASCRIPT
-                elif language in ["javascript", "js"]:
-
-                    with open("temp.js", "w") as f:
-
-                        f.write(code)
-
-                    result = subprocess.run(
-                        ["node", "temp.js"],
-                        input=user_input + "\n",
-                        capture_output=True,
-                        text=True
-                    )
-
-                    output = result.stdout + result.stderr
-
-                else:
-
-                    output = "Language not supported yet"
-
-                st.markdown("### Output")
-
-                st.code(output)
-
-            except Exception as e:
-
-    st.error(str(e))
 
