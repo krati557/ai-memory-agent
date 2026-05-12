@@ -187,22 +187,30 @@ with st.sidebar:
     st.divider()
 
     # PREVIOUS CHATS
-    st.subheader("🕘 Previous Chats")
+st.subheader("🕘 Previous Chats")
 
-    all_chats = load_chats()
+all_chats = load_chats()
 
-    filtered_chats = [
-        c for c in all_chats
-        if search.lower() in c.lower()
-    ]
+filtered_chats = [
+    c for c in all_chats
+    if search.lower() in c.lower()
+]
 
-    if filtered_chats:
+if filtered_chats:
 
-        for chat_file in filtered_chats:
+    for chat_file in filtered_chats:
 
-            chat_name = chat_file.replace(".json", "")
+        chat_name = chat_file.replace(".json", "")
 
-            if st.button(chat_name):
+        col1, col2 = st.columns([5, 1])
+
+        # OPEN CHAT
+        with col1:
+
+            if st.button(
+                f"💬 {chat_name}",
+                key=f"open_{chat_name}"
+            ):
 
                 st.session_state.messages = load_chat_file(chat_file)
 
@@ -210,11 +218,25 @@ with st.sidebar:
 
                 st.rerun()
 
-    else:
+        # DELETE CHAT
+        with col2:
 
-        st.write("No chats found")
+            if st.button(
+                "❌",
+                key=f"delete_{chat_name}"
+            ):
 
-    st.divider()
+                os.remove(
+                    f"{CHAT_FOLDER}/{chat_file}"
+                )
+
+                st.success("Chat Deleted")
+
+                st.rerun()
+
+else:
+
+    st.write("No chats found")
 
     # MORE
     st.subheader("⚙ More")
