@@ -3,7 +3,6 @@ from openai import OpenAI
 import subprocess
 import tempfile
 from duckduckgo_search import DDGS
-import pandas as pd
 
 # OPENAI CLIENT
 client = OpenAI(
@@ -59,9 +58,7 @@ with st.sidebar:
 
     if st.session_state.messages:
 
-        for i, msg in enumerate(
-            st.session_state.messages
-        ):
+        for msg in st.session_state.messages:
 
             if msg["role"] == "user":
 
@@ -97,7 +94,7 @@ Your job:
 2. Break the task into steps
 3. Think step-by-step
 4. Research if needed
-5. Give final detailed answer
+5. Give detailed final answer
 
 USER TASK:
 {task}
@@ -106,7 +103,6 @@ IMPORTANT:
 - Be autonomous
 - Think carefully
 - Give detailed output
-- If coding is needed, generate complete executable code
 """
 
     response = client.chat.completions.create(
@@ -133,37 +129,6 @@ for msg in st.session_state.messages:
 
 # USER INPUT
 prompt = st.chat_input("Ask anything...")
-
-# WEB SEARCH MODE
-if prompt and "search" in prompt.lower():
-
-    with st.spinner("Searching Web..."):
-
-        results = []
-
-        with DDGS() as ddgs:
-
-            for r in ddgs.text(prompt, max_results=5):
-
-                results.append(
-                    f"### {r['title']}\n"
-                    f"{r['body']}\n"
-                    f"{r['href']}\n"
-                )
-
-        final_result = "\n\n".join(results)
-
-        st.session_state.messages.append({
-            "role": "assistant",
-            "content": final_result
-        })
-
-        with st.chat_message("assistant"):
-
-            st.markdown(final_result)
-
-    st.stop()
-
 
 if prompt:
 
@@ -194,41 +159,49 @@ if prompt:
 
         st.stop()
 
+    # WEB SEARCH MODE
+    elif "search" in prompt.lower():
 
-    # SAVE USER MESSAGE
-    st.session_state.messages.append({
-        "role": "user",
-        "content": prompt
-    })
+        with st.spinner("Searching Web..."):
 
-    # SHOW USER MESSAGE
-    with st.chat_message("user"):
-        st.markdown(prompt)
+            results = []
 
+            with DDGS() as ddgs:
+
+                for r in ddgs.text(prompt, max_results=5):
+
+                    results.append(
+                        f"### {r['title']}\n"
+                        f"{r['body']}\n"
+                        f"{r['href']}\n"
+                    )
+
+            final_result = "\n\n".join(results)
+
+            st.session_state.messages.append({
+                "role": "assistant",
+                "content": final_result
+            })
+
+            with st.chat_message("assistant"):
+                st.markdown(final_result)
+
+        st.stop()
+
+    # NORMAL AI CHAT
     system_prompt = """
-You are an autonomous AI coding agent.
+You are an autonomous AI coding assistant.
 
 IMPORTANT:
 - Always generate executable code
 - Always give complete code
 - Always take input from user using input()
 - Never hardcode values
+- Never say run locally or use your IDE
+- Put code inside triple backticks
 
-- Never say:
-    - run locally
-    - use your IDE
-    - I cannot run code
-
-- Always put code inside triple backticks
-
-If user asks normal questions or translations,
-respond normally without code.
-
-Generate code ONLY when user explicitly asks:
-- create code
-- write program
-- build app
-- coding task
+If user asks normal questions,
+respond normally.
 """
 
     # AI RESPONSE
