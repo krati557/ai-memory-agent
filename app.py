@@ -3,6 +3,9 @@ from openai import OpenAI
 import subprocess
 import tempfile
 from duckduckgo_search import DDGS
+import json
+import os
+from datetime import datetime
 
 # OPENAI CLIENT
 client = OpenAI(
@@ -16,72 +19,53 @@ st.set_page_config(
     layout="wide"
 )
 
-# MEMORY
+# CHAT STORAGE
+CHAT_FOLDER = "chats"
+
+if not os.path.exists(CHAT_FOLDER):
+    os.makedirs(CHAT_FOLDER)
+
+# SESSION
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# TITLE
-st.title("🤖 Autonomous AI Agent")
+if "chat_id" not in st.session_state:
+    st.session_state.chat_id = datetime.now().strftime("%Y%m%d_%H%M%S")
 
-# SIDEBAR
-with st.sidebar:
+# SAVE CHAT
+def save_chat():
 
-    st.title("💬 Menu")
+    filename = f"{CHAT_FOLDER}/{st.session_state.chat_id}.json"
 
-    # NEW CHAT
-    if st.button("➕ New Chat"):
+    with open(filename, "w") as f:
 
-        st.session_state.messages = []
+        json.dump(
+            st.session_state.messages,
+            f,
+            indent=2
+        )
 
-        st.rerun()
+# LOAD CHATS
+def load_chats():
 
-    st.divider()
+    chats = []
 
-    # SEARCH
-    search = st.text_input(
-        "🔍 Search Chats"
-    )
+    if os.path.exists(CHAT_FOLDER):
 
-    st.divider()
+        for file in os.listdir(CHAT_FOLDER):
 
-    # PROJECTS
-    st.subheader("📁 Projects")
+            if file.endswith(".json"):
 
-    st.write("• AI Assistant")
-    st.write("• Code Runner")
-    st.write("• Java Compiler")
+                chats.append(file)
 
-    st.divider()
+    return sorted(chats, reverse=True)
 
-    # PREVIOUS CHATS
-    st.subheader("🕘 Previous Chats")
+# LOAD SINGLE CHAT
+def load_chat_file(filename):
 
-    if st.session_state.messages:
+    with open(f"{CHAT_FOLDER}/{filename}", "r") as f:
 
-        for msg in st.session_state.messages:
-
-            if msg["role"] == "user":
-
-                preview = msg["content"][:30]
-
-                st.write(f"💬 {preview}")
-
-    else:
-
-        st.write("No chats yet")
-
-    st.divider()
-
-    # MORE
-    st.subheader("⚙ More")
-
-    st.write("👤 Profile")
-    st.write("🌙 Dark Mode")
-    st.write("⚡ Settings")
-
-st.caption(
-    "Chat • Generate Code • Run Code • Take User Input"
-)
+        return json.load(f)
 
 # AUTONOMOUS AI AGENT
 def autonomous_agent(task):
@@ -121,6 +105,127 @@ IMPORTANT:
 
     return response.choices[0].message.content
 
+# DAILY REPORT FUNCTION
+def generate_daily_report():
+
+    all_text = ""
+
+    for msg in st.session_state.messages:
+
+        role = msg["role"]
+
+        content = msg["content"]
+
+        all_text += f"{role}: {content}\n"
+
+    report_prompt = f"""
+You are an AI productivity assistant.
+
+Analyze today's chat history and generate a professional daily work report.
+
+Include:
+- Tasks completed
+- Features implemented
+- Problems solved
+- Technologies used
+- Progress summary
+
+CHAT HISTORY:
+{all_text}
+"""
+
+    response = client.chat.completions.create(
+        model="gpt-4.1-mini",
+        messages=[
+            {
+                "role": "system",
+                "content": "You generate professional work reports."
+            },
+            {
+                "role": "user",
+                "content": report_prompt
+            }
+        ]
+    )
+
+    return response.choices[0].message.content
+
+# TITLE
+st.title("🤖 Autonomous AI Agent")
+
+# SIDEBAR
+with st.sidebar:
+
+    st.title("💬 Menu")
+
+    # NEW CHAT
+    if st.button("➕ New Chat"):
+
+        st.session_state.messages = []
+
+        st.session_state.chat_id = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+        st.rerun()
+
+    st.divider()
+
+    # SEARCH
+    search = st.text_input(
+        "🔍 Search Chats"
+    )
+
+    st.divider()
+
+    # PROJECTS
+    st.subheader("📁 Projects")
+
+    st.write("• AI Assistant")
+    st.write("• Code Runner")
+    st.write("• Java Compiler")
+
+    st.divider()
+
+    # PREVIOUS CHATS
+    st.subheader("🕘 Previous Chats")
+
+    all_chats = load_chats()
+
+    filtered_chats = [
+        c for c in all_chats
+        if search.lower() in c.lower()
+    ]
+
+    if filtered_chats:
+
+        for chat_file in filtered_chats:
+
+            chat_name = chat_file.replace(".json", "")
+
+            if st.button(chat_name):
+
+                st.session_state.messages = load_chat_file(chat_file)
+
+                st.session_state.chat_id = chat_name
+
+                st.rerun()
+
+    else:
+
+        st.write("No chats found")
+
+    st.divider()
+
+    # MORE
+    st.subheader("⚙ More")
+
+    st.write("👤 Profile")
+    st.write("🌙 Dark Mode")
+    st.write("⚡ Settings")
+
+st.caption(
+    "Chat • Generate Code • Run Code • Web Search • Daily Reports"
+)
+
 # SHOW OLD CHATS
 for msg in st.session_state.messages:
 
@@ -138,12 +243,33 @@ if prompt:
         "content": prompt
     })
 
+    save_chat()
+
     # SHOW USER MESSAGE
     with st.chat_message("user"):
         st.markdown(prompt)
 
+    # DAILY REPORT MODE
+    if "what did i do today" in prompt.lower() or "aaj mene kya kiya" in prompt.lower():
+
+        with st.spinner("Generating Daily Report..."):
+
+            report = generate_daily_report()
+
+            st.session_state.messages.append({
+                "role": "assistant",
+                "content": report
+            })
+
+            save_chat()
+
+            with st.chat_message("assistant"):
+                st.markdown(report)
+
+        st.stop()
+
     # AUTONOMOUS MODE
-    if "research" in prompt.lower():
+    elif "research" in prompt.lower():
 
         with st.spinner("AI Agent Thinking..."):
 
@@ -153,6 +279,8 @@ if prompt:
                 "role": "assistant",
                 "content": result
             })
+
+            save_chat()
 
             with st.chat_message("assistant"):
                 st.markdown(result)
@@ -182,6 +310,8 @@ if prompt:
                 "role": "assistant",
                 "content": final_result
             })
+
+            save_chat()
 
             with st.chat_message("assistant"):
                 st.markdown(final_result)
@@ -223,6 +353,8 @@ respond normally.
         "role": "assistant",
         "content": reply
     })
+
+    save_chat()
 
     # SHOW AI MESSAGE
     with st.chat_message("assistant"):
