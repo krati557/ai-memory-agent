@@ -1,15 +1,14 @@
+````python
 import streamlit as st
 from openai import OpenAI
 import subprocess
 import tempfile
 from duckduckgo_search import DDGS
 import pandas as pd
-from crewai import Agent, Task, Crew
-
 
 # OPENAI CLIENT
 client = OpenAI(
-     api_key=st.secrets["OPENAI_API_KEY"]
+    api_key=st.secrets["OPENAI_API_KEY"]
 )
 
 # PAGE
@@ -25,6 +24,7 @@ if "messages" not in st.session_state:
 
 # TITLE
 st.title("🤖 Autonomous AI Agent")
+
 # SIDEBAR
 with st.sidebar:
 
@@ -86,42 +86,46 @@ with st.sidebar:
 st.caption(
     "Chat • Generate Code • Run Code • Take User Input"
 )
+
 # AUTONOMOUS AI AGENT
-def autonomous_task(user_task):
+def autonomous_agent(task):
 
-    researcher = Agent(
-        role="Researcher",
-        goal="Search and collect useful information",
-        backstory="Expert internet researcher",
-        verbose=True
+    autonomous_prompt = f"""
+You are an advanced autonomous AI agent.
+
+Your job:
+1. Understand the user's task
+2. Break the task into steps
+3. Think step-by-step
+4. Research if needed
+5. Give final detailed answer
+
+USER TASK:
+{task}
+
+IMPORTANT:
+- Be autonomous
+- Think carefully
+- Give detailed output
+- If coding is needed, generate complete executable code
+"""
+
+    response = client.chat.completions.create(
+        model="gpt-4.1-mini",
+        messages=[
+            {
+                "role": "system",
+                "content": "You are an autonomous AI agent."
+            },
+            {
+                "role": "user",
+                "content": autonomous_prompt
+            }
+        ]
     )
 
-    analyst = Agent(
-        role="Analyst",
-        goal="Analyze and summarize information",
-        backstory="Expert AI analyst",
-        verbose=True
-    )
+    return response.choices[0].message.content
 
-    task1 = Task(
-        description=f"Research this topic: {user_task}",
-        agent=researcher
-    )
-
-    task2 = Task(
-        description=f"Analyze and summarize findings about: {user_task}",
-        agent=analyst
-    )
-
-    crew = Crew(
-        agents=[researcher, analyst],
-        tasks=[task1, task2],
-        verbose=True
-    )
-
-    result = crew.kickoff()
-
-    return result
 # SHOW OLD CHATS
 for msg in st.session_state.messages:
 
@@ -130,6 +134,7 @@ for msg in st.session_state.messages:
 
 # USER INPUT
 prompt = st.chat_input("Ask anything...")
+
 # WEB SEARCH MODE
 if prompt and "search" in prompt.lower():
 
@@ -165,13 +170,14 @@ if prompt:
     # AUTONOMOUS MODE
     if "research" in prompt.lower():
 
-        with st.spinner("AI Agent Working..."):
+        with st.spinner("AI Agent Thinking..."):
 
-            result = autonomous_task(prompt)
+            result = autonomous_agent(prompt)
 
             st.write(result)
 
         st.stop()
+
     # SAVE USER MESSAGE
     st.session_state.messages.append({
         "role": "user",
@@ -189,9 +195,7 @@ IMPORTANT:
 - Always generate executable code
 - Always give complete code
 - Always take input from user using input()
-- Never hardcode values like:
-    name = "krati"
-    input_string = "naman"
+- Never hardcode values
 
 - Never say:
     - run locally
@@ -200,26 +204,19 @@ IMPORTANT:
 
 - Always put code inside triple backticks
 
-EXAMPLE:
-
-Correct:
-text = input("Enter text: ")
-
-Wrong:
-text = "naman"- 
 If user asks normal questions or translations,
-  respond normally without code
+respond normally without code.
 
-- Generate code ONLY when user explicitly asks:
-  - create code
-  - write program
-  - build app
-  - coding task
+Generate code ONLY when user explicitly asks:
+- create code
+- write program
+- build app
+- coding task
 """
 
     # AI RESPONSE
     response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
+        model="gpt-4.1-mini",
         messages=[
             {
                 "role": "system",
@@ -336,3 +333,4 @@ If user asks normal questions or translations,
             except Exception as e:
 
                 st.error(str(e))
+````
