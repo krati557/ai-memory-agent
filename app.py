@@ -347,119 +347,119 @@ respond normally.
         ]
     )
 
-    reply = response.choices[0].message.content
+reply = response.choices[0].message.content
 
-    # SAVE AI MESSAGE
-    st.session_state.messages.append({
-        "role": "assistant",
-        "content": reply
-    })
 
-    save_chat()
+# SAVE AI MESSAGE
+st.session_state.messages.append({
+    "role": "assistant",
+    "content": reply
+})
 
-    # SHOW AI MESSAGE
-    with st.chat_message("assistant"):
+save_chat()
 
-        st.markdown(reply)
+# SHOW AI MESSAGE
+with st.chat_message("assistant"):
 
-       
-# CODE DETECT
-if "```" in reply:
+    st.markdown(reply)
 
-    try:
+    # CODE DETECT
+    if "```" in reply:
 
-        block = reply.split("```")[1]
+        try:
 
-        language = block.split("\n")[0].strip()
+            block = reply.split("```")[1]
 
-        code = block.split("\n", 1)[1]
+            language = block.split("\n")[0].strip()
 
-        code = code.rsplit("```", 1)[0]
+            code = block.split("\n", 1)[1]
 
-        st.code(code, language=language)
+            code = code.rsplit("```", 1)[0]
 
-        # INPUT BOX
-        user_input = st.text_input(
-            "Enter Input",
-            key=f"input_{language}"
-        )
+            st.code(code, language=language)
 
-        # RUN BUTTON
-        run_btn = st.button(
-            "▶ Run Code",
-            key=f"run_{language}"
-        )
+            # INPUT BOX
+            user_input = st.text_input(
+                "Enter Input",
+                key=f"input_{language}"
+            )
 
-        if run_btn:
+            # RUN BUTTON
+            run_btn = st.button(
+                "▶ Run Code",
+                key=f"run_{language}"
+            )
 
-            output = ""
+            if run_btn:
 
-            # PYTHON
-            if language == "python":
+                output = ""
 
-                with tempfile.NamedTemporaryFile(
-                    suffix=".py",
-                    delete=False,
-                    mode="w"
-                ) as f:
+                # PYTHON
+                if language == "python":
 
-                    f.write(code)
+                    with tempfile.NamedTemporaryFile(
+                        suffix=".py",
+                        delete=False,
+                        mode="w"
+                    ) as f:
 
-                    filename = f.name
+                        f.write(code)
 
-                result = subprocess.run(
-                    ["python3", filename],
-                    input=user_input + "\n",
-                    capture_output=True,
-                    text=True
-                )
+                        filename = f.name
 
-                output = result.stdout + result.stderr
+                    result = subprocess.run(
+                        ["python3", filename],
+                        input=user_input + "\n",
+                        capture_output=True,
+                        text=True
+                    )
 
-            # JAVA
-            elif language == "java":
+                    output = result.stdout + result.stderr
 
-                with open("Main.java", "w") as f:
-                    f.write(code)
+                # JAVA
+                elif language == "java":
 
-                subprocess.run(
-                    ["javac", "Main.java"]
-                )
+                    with open("Main.java", "w") as f:
+                        f.write(code)
 
-                result = subprocess.run(
-                    ["java", "Main"],
-                    input=user_input + "\n",
-                    capture_output=True,
-                    text=True
-                )
+                    subprocess.run(
+                        ["javac", "Main.java"]
+                    )
 
-                output = result.stdout + result.stderr
+                    result = subprocess.run(
+                        ["java", "Main"],
+                        input=user_input + "\n",
+                        capture_output=True,
+                        text=True
+                    )
 
-            # JAVASCRIPT
-            elif language in ["javascript", "js"]:
+                    output = result.stdout + result.stderr
 
-                with open("temp.js", "w") as f:
-                    f.write(code)
+                # JAVASCRIPT
+                elif language in ["javascript", "js"]:
 
-                result = subprocess.run(
-                    ["node", "temp.js"],
-                    input=user_input + "\n",
-                    capture_output=True,
-                    text=True
-                )
+                    with open("temp.js", "w") as f:
+                        f.write(code)
 
-                output = result.stdout + result.stderr
+                    result = subprocess.run(
+                        ["node", "temp.js"],
+                        input=user_input + "\n",
+                        capture_output=True,
+                        text=True
+                    )
 
-            else:
+                    output = result.stdout + result.stderr
 
-                output = "Language not supported yet"
+                else:
 
-            # SHOW OUTPUT
-            st.markdown("### Output")
+                    output = "Language not supported yet"
 
-            st.code(output)
+                # SHOW OUTPUT
+                st.markdown("### Output")
 
-    except Exception as e:
+                st.code(output)
 
-        st.error(str(e))
+        except Exception as e:
+
+            st.error(str(e))
 
