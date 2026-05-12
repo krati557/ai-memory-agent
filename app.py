@@ -1,61 +1,292 @@
 import streamlit as st
 from openai import OpenAI
-from dotenv import load_dotenv
-import os
-import json
+import subprocess
+import tempfile
+from duckduckgo_search import DDGS
+import pandas as pd
 
-load_dotenv()
 
+# OPENAI CLIENT
 client = OpenAI(
-    api_key=os.getenv("OPENAI_API_KEY")
+     api_key=st.secrets["OPENAI_API_KEY"]
 )
 
-MEMORY_FILE = "memory.json"
+# PAGE
+st.set_page_config(
+    page_title="AI Agent",
+    page_icon="🤖",
+    layout="wide"
+)
 
-# Load old memory
-if os.path.exists(MEMORY_FILE):
-    with open(MEMORY_FILE, "r") as f:
-        memory = json.load(f)
-else:
-    memory = []
+# MEMORY
+if "messages" not in st.session_state:
+    st.session_state.messages = []
 
-st.title("🤖 AI Memory Agent")
+# TITLE
+st.title("🤖 Autonomous AI Agent")
+# SIDEBAR
+with st.sidebar:
 
-user_input = st.text_input("Ask Something")
+    st.title("💬 Menu")
 
-if st.button("Send"):
+    # NEW CHAT
+    if st.button("➕ New Chat"):
 
-    old_context = "\n".join(memory)
+        st.session_state.messages = []
 
-    prompt = f"""
-Previous Memory:
-{old_context}
+        st.rerun()
 
-User Question:
-{user_input}
+    st.divider()
+
+    # SEARCH
+    search = st.text_input(
+        "🔍 Search Chats"
+    )
+
+    st.divider()
+
+    # PROJECTS
+    st.subheader("📁 Projects")
+
+    st.write("• AI Assistant")
+    st.write("• Code Runner")
+    st.write("• Java Compiler")
+
+    st.divider()
+
+    # PREVIOUS CHATS
+    st.subheader("🕘 Previous Chats")
+
+    if st.session_state.messages:
+
+        for i, msg in enumerate(
+            st.session_state.messages
+        ):
+
+            if msg["role"] == "user":
+
+                preview = msg["content"][:30]
+
+                st.write(f"💬 {preview}")
+
+    else:
+
+        st.write("No chats yet")
+
+    st.divider()
+
+    # MORE
+    st.subheader("⚙ More")
+
+    st.write("👤 Profile")
+    st.write("🌙 Dark Mode")
+    st.write("⚡ Settings")
+
+st.caption(
+    "Chat • Generate Code • Run Code • Take User Input"
+)
+
+# SHOW OLD CHATS
+for msg in st.session_state.messages:
+
+    with st.chat_message(msg["role"]):
+        st.markdown(msg["content"])
+
+# USER INPUT
+prompt = st.chat_input("Ask anything...")
+# WEB SEARCH MODE
+if prompt and "search" in prompt.lower():
+
+    with st.spinner("Searching Web..."):
+
+        results = []
+
+        with DDGS() as ddgs:
+
+            for r in ddgs.text(prompt, max_results=5):
+
+                results.append(
+                    f"### {r['title']}\n"
+                    f"{r['body']}\n"
+                    f"{r['href']}\n"
+                )
+
+        final_result = "\n\n".join(results)
+
+        st.session_state.messages.append({
+            "role": "assistant",
+            "content": final_result
+        })
+
+        with st.chat_message("assistant"):
+
+            st.markdown(final_result)
+
+    st.stop()
+
+if prompt:
+
+    # SAVE USER MESSAGE
+    st.session_state.messages.append({
+        "role": "user",
+        "content": prompt
+    })
+
+    # SHOW USER MESSAGE
+    with st.chat_message("user"):
+        st.markdown(prompt)
+
+    system_prompt = """
+You are an autonomous AI coding agent.
+
+IMPORTANT:
+- Always generate executable code
+- Always give complete code
+- Always take input from user using input()
+- Never hardcode values like:
+    name = "krati"
+    input_string = "naman"
+
+- Never say:
+    - run locally
+    - use your IDE
+    - I cannot run code
+
+- Always put code inside triple backticks
+
+EXAMPLE:
+
+Correct:
+text = input("Enter text: ")
+
+Wrong:
+text = "naman"- 
+If user asks normal questions or translations,
+  respond normally without code
+
+- Generate code ONLY when user explicitly asks:
+  - create code
+  - write program
+  - build app
+  - coding task
 """
 
+    # AI RESPONSE
     response = client.chat.completions.create(
-        model="gpt-4.1-mini",
+        model="gpt-3.5-turbo",
         messages=[
             {
                 "role": "system",
-                "content": "You are an AI coding assistant with memory."
+                "content": system_prompt
             },
-            {
-                "role": "user",
-                "content": prompt
-            }
+            *st.session_state.messages
         ]
     )
 
-    ai_response = response.choices[0].message.content
+    reply = response.choices[0].message.content
 
-    st.write(ai_response)
+    # SAVE AI MESSAGE
+    st.session_state.messages.append({
+        "role": "assistant",
+        "content": reply
+    })
 
-    # Save memory
-    memory.append(f"User: {user_input}")
-    memory.append(f"AI: {ai_response}")
+    # SHOW AI MESSAGE
+    with st.chat_message("assistant"):
 
-    with open(MEMORY_FILE, "w") as f:
-        json.dump(memory, f, indent=2)
+        st.markdown(reply)
+
+        # CODE DETECT
+        if "```" in reply:
+
+            try:
+
+                block = reply.split("```")[1]
+
+                language = block.split("\n")[0].strip()
+
+                code = block.split("\n", 1)[1]
+
+                code = code.rsplit("```", 1)[0]
+
+                st.code(code, language=language)
+
+                # INPUT BOX
+                user_input = st.text_input(
+                    "Enter Input",
+                    key="input_box"
+                )
+
+                # RUN BUTTON
+                if st.button("▶ Run Code"):
+
+                    output = ""
+
+                    # PYTHON
+                    if language == "python":
+
+                        with tempfile.NamedTemporaryFile(
+                            suffix=".py",
+                            delete=False,
+                            mode="w"
+                        ) as f:
+
+                            f.write(code)
+
+                            filename = f.name
+
+                        result = subprocess.run(
+                            ["python3", filename],
+                            input=user_input,
+                            capture_output=True,
+                            text=True
+                        )
+
+                        output = result.stdout + result.stderr
+
+                    # JAVA
+                    elif language == "java":
+
+                        with open("Main.java", "w") as f:
+                            f.write(code)
+
+                        subprocess.run(
+                            ["javac", "Main.java"]
+                        )
+
+                        result = subprocess.run(
+                            ["java", "Main"],
+                            input=user_input,
+                            capture_output=True,
+                            text=True
+                        )
+
+                        output = result.stdout + result.stderr
+
+                    # JAVASCRIPT
+                    elif language in ["javascript", "js"]:
+
+                        with open("temp.js", "w") as f:
+                            f.write(code)
+
+                        result = subprocess.run(
+                            ["node", "temp.js"],
+                            input=user_input,
+                            capture_output=True,
+                            text=True
+                        )
+
+                        output = result.stdout + result.stderr
+
+                    else:
+
+                        output = "Language not supported yet"
+
+                    # SHOW OUTPUT
+                    st.markdown("### Output")
+
+                    st.code(output)
+
+            except Exception as e:
+
+                st.error(str(e))
