@@ -7,25 +7,33 @@ import json
 import os
 from datetime import datetime
 
+# =========================
 # OPENAI CLIENT
+# =========================
 client = OpenAI(
     api_key=st.secrets["OPENAI_API_KEY"]
 )
 
+# =========================
 # PAGE CONFIG
+# =========================
 st.set_page_config(
     page_title="Autonomous AI Agent",
     page_icon="🤖",
     layout="wide"
 )
 
+# =========================
 # CHAT STORAGE
+# =========================
 CHAT_FOLDER = "chats"
 
 if not os.path.exists(CHAT_FOLDER):
     os.makedirs(CHAT_FOLDER)
 
+# =========================
 # SESSION STATE
+# =========================
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
@@ -35,8 +43,9 @@ if "chat_id" not in st.session_state:
 if "current_project" not in st.session_state:
     st.session_state.current_project = "general"
 
-
+# =========================
 # SAVE CHAT
+# =========================
 def save_chat():
 
     filename = f"{CHAT_FOLDER}/{st.session_state.chat_id}.json"
@@ -47,11 +56,11 @@ def save_chat():
     }
 
     with open(filename, "w") as f:
-
         json.dump(chat_data, f, indent=2)
 
-
+# =========================
 # LOAD CHATS
+# =========================
 def load_chats():
 
     chats = []
@@ -61,27 +70,26 @@ def load_chats():
         for file in os.listdir(CHAT_FOLDER):
 
             if file.endswith(".json"):
-
                 chats.append(file)
 
     return sorted(chats, reverse=True)
 
-
+# =========================
 # LOAD SINGLE CHAT
+# =========================
 def load_chat_file(filename):
 
     with open(f"{CHAT_FOLDER}/{filename}", "r") as f:
-
         data = json.load(f)
 
     if isinstance(data, dict):
-
         return data.get("messages", [])
 
     return data
 
-
+# =========================
 # SMART MEMORY
+# =========================
 def retrieve_project_memory(prompt):
 
     relevant_memories = []
@@ -105,11 +113,9 @@ def retrieve_project_memory(prompt):
                 for word in keywords:
 
                     if word in content:
-
                         score += 1
 
                 if score >= 2:
-
                     relevant_memories.append(msg["content"])
 
         except:
@@ -117,8 +123,9 @@ def retrieve_project_memory(prompt):
 
     return relevant_memories[-10:]
 
-
+# =========================
 # TOOL ROUTER
+# =========================
 def decide_tool(prompt):
 
     router_prompt = f"""
@@ -161,8 +168,9 @@ normal_chat
 
     return response.choices[0].message.content.strip()
 
-
+# =========================
 # AUTONOMOUS EXECUTION
+# =========================
 def autonomous_execution_agent(task):
 
     planner_prompt = f"""
@@ -194,8 +202,9 @@ TASK:
 {plan}
 """
 
-
+# =========================
 # DAILY REPORT
+# =========================
 def generate_daily_report():
 
     all_text = ""
@@ -230,12 +239,14 @@ CHAT HISTORY:
 
     return response.choices[0].message.content
 
-
+# =========================
 # TITLE
+# =========================
 st.title("🤖 Autonomous AI Agent")
 
-
+# =========================
 # SIDEBAR
+# =========================
 with st.sidebar:
 
     st.title("💬 Menu")
@@ -274,6 +285,7 @@ with st.sidebar:
 
             col1, col2 = st.columns([5, 1])
 
+            # OPEN CHAT
             with col1:
 
                 if st.button(f"💬 {chat_name}", key=chat_name):
@@ -284,6 +296,7 @@ with st.sidebar:
 
                     st.rerun()
 
+            # DELETE CHAT
             with col2:
 
                 if st.button("❌", key=f"delete_{chat_name}"):
@@ -293,28 +306,32 @@ with st.sidebar:
                     st.rerun()
 
     else:
-
         st.write("No chats found")
 
-
+# =========================
 # CAPTION
+# =========================
 st.caption(
     "Chat • Autonomous AI • Memory • Code Runner • Web Search"
 )
 
-
+# =========================
 # SHOW CHATS
+# =========================
 for msg in st.session_state.messages:
 
     with st.chat_message(msg["role"]):
 
         st.markdown(msg["content"])
 
-
+# =========================
 # USER INPUT
+# =========================
 prompt = st.chat_input("Ask anything...")
 
-
+# =========================
+# MAIN LOGIC
+# =========================
 if prompt:
 
     # PROJECT DETECTION
@@ -359,13 +376,14 @@ Return short project name only.
 
     # SHOW USER MESSAGE
     with st.chat_message("user"):
-
         st.markdown(prompt)
 
     # TOOL DECISION
     selected_tool = decide_tool(prompt)
 
+    # =========================
     # DAILY REPORT
+    # =========================
     if "what did i do today" in prompt.lower():
 
         with st.spinner("Generating report..."):
@@ -380,12 +398,13 @@ Return short project name only.
             save_chat()
 
             with st.chat_message("assistant"):
-
                 st.markdown(report)
 
         st.stop()
 
+    # =========================
     # WEB SEARCH
+    # =========================
     if selected_tool == "web_search":
 
         with st.spinner("Searching web..."):
@@ -412,12 +431,13 @@ Return short project name only.
             save_chat()
 
             with st.chat_message("assistant"):
-
                 st.markdown(final_result)
 
         st.stop()
 
+    # =========================
     # AUTONOMOUS EXECUTION
+    # =========================
     elif selected_tool == "autonomous_execution":
 
         with st.spinner("AI Autonomous Execution..."):
@@ -432,12 +452,13 @@ Return short project name only.
             save_chat()
 
             with st.chat_message("assistant"):
-
                 st.markdown(result)
 
         st.stop()
 
+    # =========================
     # NORMAL CHAT
+    # =========================
     system_prompt = """
 You are an autonomous AI coding assistant.
 
@@ -453,6 +474,9 @@ IMPORTANT:
 
     memory_context = "\n".join(memories)
 
+    # =========================
+    # AI RESPONSE
+    # =========================
     response = client.chat.completions.create(
         model="gpt-4.1-mini",
         messages=[
@@ -484,218 +508,113 @@ Use these memories while responding.
 
     save_chat()
 
+    # =========================
     # SHOW RESPONSE
+    # =========================
     with st.chat_message("assistant"):
 
         st.markdown(reply)
 
-        
-# CODE DETECTION
-if reply and "```" in reply:
+        # =========================
+        # CODE DETECTION
+        # =========================
+        if reply and "```" in reply:
 
-    try:
+            try:
 
-        block = reply.split("```")[1]
+                block = reply.split("```")[1]
 
-        language = block.split("\n")[0].strip().lower()
+                language = block.split("\n")[0].strip()
 
-        code = block.split("\n", 1)[1]
+                code = block.split("\n", 1)[1]
 
-        code = code.rsplit("```", 1)[0]
+                code = code.rsplit("```", 1)[0]
 
-        st.code(code, language=language)
+                st.code(code, language=language)
 
-        user_input = st.text_input(
-            "Enter Input",
-            key=f"input_{language}"
-        )
-
-        run_btn = st.button(
-            "▶ Run Code",
-            key=f"run_{language}"
-        )
-
-        if run_btn:
-
-            output = ""
-
-            # ---------------- PYTHON ----------------
-            if language == "python":
-
-                with tempfile.NamedTemporaryFile(
-                    suffix=".py",
-                    delete=False,
-                    mode="w"
-                ) as f:
-
-                    f.write(code)
-
-                    filename = f.name
-
-                result = subprocess.run(
-                    ["python3", filename],
-                    input=user_input + "\n",
-                    capture_output=True,
-                    text=True
+                user_input = st.text_input(
+                    "Enter Input",
+                    key=f"input_{language}"
                 )
 
-                output = result.stdout + result.stderr
-
-            # ---------------- JAVA ----------------
-            elif language == "java":
-
-                with open("Main.java", "w") as f:
-
-                    f.write(code)
-
-                subprocess.run(
-                    ["javac", "Main.java"],
-                    capture_output=True,
-                    text=True
+                run_btn = st.button(
+                    "▶ Run Code",
+                    key=f"run_{language}"
                 )
 
-                result = subprocess.run(
-                    ["java", "Main"],
-                    input=user_input + "\n",
-                    capture_output=True,
-                    text=True
-                )
+                if run_btn:
 
-                output = result.stdout + result.stderr
+                    output = ""
 
-            # ---------------- JAVASCRIPT ----------------
-            elif language in ["javascript", "js"]:
+                    # =========================
+                    # PYTHON
+                    # =========================
+                    if language == "python":
 
-                with open("temp.js", "w") as f:
+                        with tempfile.NamedTemporaryFile(
+                            suffix=".py",
+                            delete=False,
+                            mode="w"
+                        ) as f:
 
-                    f.write(code)
+                            f.write(code)
 
-                result = subprocess.run(
-                    ["node", "temp.js"],
-                    input=user_input + "\n",
-                    capture_output=True,
-                    text=True
-                )
+                            filename = f.name
 
-                output = result.stdout + result.stderr
+                        result = subprocess.run(
+                            ["python3", filename],
+                            input=user_input + "\n",
+                            capture_output=True,
+                            text=True
+                        )
 
-            # ---------------- C ----------------
-            elif language == "c":
+                        output = result.stdout + result.stderr
 
-                with open("main.c", "w") as f:
+                    # =========================
+                    # JAVASCRIPT
+                    # =========================
+                    elif language in ["javascript", "js"]:
 
-                    f.write(code)
+                        with open("temp.js", "w") as f:
+                            f.write(code)
 
-                subprocess.run(
-                    ["gcc", "main.c", "-o", "main"],
-                    capture_output=True,
-                    text=True
-                )
+                        result = subprocess.run(
+                            ["node", "temp.js"],
+                            input=user_input + "\n",
+                            capture_output=True,
+                            text=True
+                        )
 
-                result = subprocess.run(
-                    ["./main"],
-                    input=user_input + "\n",
-                    capture_output=True,
-                    text=True
-                )
+                        output = result.stdout + result.stderr
 
-                output = result.stdout + result.stderr
+                    # =========================
+                    # JAVA
+                    # =========================
+                    elif language == "java":
 
-            # ---------------- C++ ----------------
-            elif language in ["cpp", "c++"]:
+                        with open("Main.java", "w") as f:
+                            f.write(code)
 
-                with open("main.cpp", "w") as f:
+                        subprocess.run(
+                            ["javac", "Main.java"]
+                        )
 
-                    f.write(code)
+                        result = subprocess.run(
+                            ["java", "Main"],
+                            input=user_input + "\n",
+                            capture_output=True,
+                            text=True
+                        )
 
-                subprocess.run(
-                    ["g++", "main.cpp", "-o", "main"],
-                    capture_output=True,
-                    text=True
-                )
+                        output = result.stdout + result.stderr
 
-                result = subprocess.run(
-                    ["./main"],
-                    input=user_input + "\n",
-                    capture_output=True,
-                    text=True
-                )
+                    else:
+                        output = "Language not supported yet"
 
-                output = result.stdout + result.stderr
+                    st.markdown("### Output")
 
-            # ---------------- GO ----------------
-            elif language == "go":
+                    st.code(output)
 
-                with open("main.go", "w") as f:
+            except Exception as e:
 
-                    f.write(code)
-
-                result = subprocess.run(
-                    ["go", "run", "main.go"],
-                    input=user_input + "\n",
-                    capture_output=True,
-                    text=True
-                )
-
-                output = result.stdout + result.stderr
-
-            # ---------------- RUBY ----------------
-            elif language == "ruby":
-
-                with open("main.rb", "w") as f:
-
-                    f.write(code)
-
-                result = subprocess.run(
-                    ["ruby", "main.rb"],
-                    input=user_input + "\n",
-                    capture_output=True,
-                    text=True
-                )
-
-                output = result.stdout + result.stderr
-
-            # ---------------- PHP ----------------
-            elif language == "php":
-
-                with open("main.php", "w") as f:
-
-                    f.write(code)
-
-                result = subprocess.run(
-                    ["php", "main.php"],
-                    input=user_input + "\n",
-                    capture_output=True,
-                    text=True
-                )
-
-                output = result.stdout + result.stderr
-
-            # ---------------- BASH ----------------
-            elif language in ["bash", "sh"]:
-
-                with open("script.sh", "w") as f:
-
-                    f.write(code)
-
-                result = subprocess.run(
-                    ["bash", "script.sh"],
-                    input=user_input + "\n",
-                    capture_output=True,
-                    text=True
-                )
-
-                output = result.stdout + result.stderr
-
-            else:
-
-                output = f"{language} not supported yet"
-
-            st.markdown("### Output")
-
-            st.code(output)
-
-    except Exception as e:
-
-        st.error(str(e))
-
+                st.error(str(e))
