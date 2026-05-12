@@ -164,24 +164,37 @@ if prompt and "search" in prompt.lower():
 
     st.stop()
 
+
 if prompt:
 
+    # SAVE USER MESSAGE
+    st.session_state.messages.append({
+        "role": "user",
+        "content": prompt
+    })
+
+    # SHOW USER MESSAGE
+    with st.chat_message("user"):
+        st.markdown(prompt)
+
     # AUTONOMOUS MODE
-   if "research" in prompt.lower():
+    if "research" in prompt.lower():
 
-    with st.spinner("AI Agent Thinking..."):
+        with st.spinner("AI Agent Thinking..."):
 
-        result = autonomous_agent(prompt)
+            result = autonomous_agent(prompt)
 
-        st.session_state.messages.append({
-            "role": "assistant",
-            "content": result
-        })
+            st.session_state.messages.append({
+                "role": "assistant",
+                "content": result
+            })
 
-        with st.chat_message("assistant"):
-            st.markdown(result)
+            with st.chat_message("assistant"):
+                st.markdown(result)
 
-    st.stop()
+        st.stop()
+
+
     # SAVE USER MESSAGE
     st.session_state.messages.append({
         "role": "user",
