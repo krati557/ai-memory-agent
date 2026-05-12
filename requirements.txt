@@ -1,0 +1,6 @@
+streamlit
+openai
+duckduckgo-search
+pandas
+crewai
+selenium
