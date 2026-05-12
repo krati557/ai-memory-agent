@@ -382,77 +382,76 @@ respond normally.
                     key="input_box"
                 )
 
-                # RUN BUTTON
-                if st.button("▶ Run Code"):
+                
+# RUN BUTTON
+if st.button("▶ Run Code"):
 
-                    output = ""
+    output = ""
 
-                    # PYTHON
-                    if language == "python":
+    # PYTHON
+    if language == "python":
 
-                        with tempfile.NamedTemporaryFile(
-                            suffix=".py",
-                            delete=False,
-                            mode="w"
-                        ) as f:
+        with tempfile.NamedTemporaryFile(
+            suffix=".py",
+            delete=False,
+            mode="w"
+        ) as f:
 
-                            f.write(code)
+            f.write(code)
 
-                            filename = f.name
+            filename = f.name
 
-                        result = subprocess.run(
-                            ["python3", filename],
-                            input=user_input,
-                            capture_output=True,
-                            text=True
-                        )
+        result = subprocess.run(
+            ["python3", filename],
+            input=user_input + "\n",
+            capture_output=True,
+            text=True
+        )
 
-                        output = result.stdout + result.stderr
+        output = result.stdout + result.stderr
 
-                    # JAVA
-                    elif language == "java":
+    # JAVA
+    elif language == "java":
 
-                        with open("Main.java", "w") as f:
-                            f.write(code)
+        with open("Main.java", "w") as f:
+            f.write(code)
 
-                        subprocess.run(
-                            ["javac", "Main.java"]
-                        )
+        subprocess.run(
+            ["javac", "Main.java"]
+        )
 
-                        result = subprocess.run(
-                            ["java", "Main"],
-                            input=user_input,
-                            capture_output=True,
-                            text=True
-                        )
+        result = subprocess.run(
+            ["java", "Main"],
+            input=user_input + "\n",
+            capture_output=True,
+            text=True
+        )
 
-                        output = result.stdout + result.stderr
+        output = result.stdout + result.stderr
 
-                    # JAVASCRIPT
-                    elif language in ["javascript", "js"]:
+    # JAVASCRIPT
+    elif language in ["javascript", "js"]:
 
-                        with open("temp.js", "w") as f:
-                            f.write(code)
+        with open("temp.js", "w") as f:
+            f.write(code)
 
-                        result = subprocess.run(
-                            ["node", "temp.js"],
-                            input=user_input,
-                            capture_output=True,
-                            text=True
-                        )
+        result = subprocess.run(
+            ["node", "temp.js"],
+            input=user_input + "\n",
+            capture_output=True,
+            text=True
+        )
 
-                        output = result.stdout + result.stderr
+        output = result.stdout + result.stderr
 
-                    else:
+    else:
 
-                        output = "Language not supported yet"
+        output = "Language not supported yet"
 
-                    # SHOW OUTPUT
-                    st.markdown("### Output")
+    # SHOW OUTPUT
+    st.markdown("### Output")
 
-                    st.code(output)
+    st.code(output)
 
-            except Exception as e:
 
-                st.error(str(e))
-
+            
