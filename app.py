@@ -105,6 +105,77 @@ IMPORTANT:
     )
 
     return response.choices[0].message.content
+# TRUE AUTONOMOUS MULTI-STEP AGENT
+def autonomous_execution_agent(task):
+
+    planner_prompt = f"""
+You are an autonomous AI planner.
+
+Break the user's task into clear executable steps.
+
+USER TASK:
+{task}
+
+Return steps in numbered format.
+"""
+
+    # STEP 1 → CREATE PLAN
+    plan_response = client.chat.completions.create(
+        model="gpt-4.1-mini",
+        messages=[
+            {
+                "role": "system",
+                "content": "You are an AI planning agent."
+            },
+            {
+                "role": "user",
+                "content": planner_prompt
+            }
+        ]
+    )
+
+    plan = plan_response.choices[0].message.content
+
+    # STEP 2 → EXECUTE PLAN
+    execution_prompt = f"""
+You are an autonomous execution agent.
+
+PLAN:
+{plan}
+
+Now execute every step carefully and provide:
+- reasoning
+- implementation
+- final answer
+"""
+
+    execute_response = client.chat.completions.create(
+        model="gpt-4.1-mini",
+        messages=[
+            {
+                "role": "system",
+                "content": "You are a powerful autonomous AI executor."
+            },
+            {
+                "role": "user",
+                "content": execution_prompt
+            }
+        ]
+    )
+
+    final_output = execute_response.choices[0].message.content
+
+    return f"""
+# 🧠 PLAN
+
+{plan}
+
+---
+
+# ⚡ EXECUTION
+
+{final_output}
+"""
 
 # DAILY REPORT FUNCTION
 def generate_daily_report():
@@ -120,20 +191,20 @@ def generate_daily_report():
         all_text += f"{role}: {content}\n"
 
     report_prompt = f"""
-You are an AI productivity assistant.
+    You are an AI productivity assistant.
 
-Analyze today's chat history and generate a professional daily work report.
+    Analyze today's chat history and generate a professional daily work report.
 
-Include:
-- Tasks completed
-- Features implemented
-- Problems solved
-- Technologies used
-- Progress summary
+    Include:
+    - Tasks completed
+    - Features implemented
+    - Problems solved
+    - Technologies used
+    - Progress summary
 
-CHAT HISTORY:
-{all_text}
-"""
+    CHAT HISTORY:
+    {all_text}
+    """
 
     response = client.chat.completions.create(
         model="gpt-4.1-mini",
@@ -287,7 +358,7 @@ if prompt:
 
         with st.spinner("AI Agent Thinking..."):
 
-            result = autonomous_agent(prompt)
+            result = autonomous_execution_agent(prompt)
 
             st.session_state.messages.append({
                 "role": "assistant",
