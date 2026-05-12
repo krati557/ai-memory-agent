@@ -1,3 +1,4 @@
+
 import streamlit as st
 from openai import OpenAI
 import subprocess
@@ -361,7 +362,6 @@ respond normally.
 
         st.markdown(reply)
 
-    
         # CODE DETECT
         if "```" in reply:
 
@@ -403,7 +403,7 @@ respond normally.
 
                         result = subprocess.run(
                             ["python3", filename],
-                            input=user_input + "\n",
+                            input=user_input,
                             capture_output=True,
                             text=True
                         )
@@ -422,7 +422,7 @@ respond normally.
 
                         result = subprocess.run(
                             ["java", "Main"],
-                            input=user_input + "\n",
+                            input=user_input,
                             capture_output=True,
                             text=True
                         )
@@ -437,7 +437,7 @@ respond normally.
 
                         result = subprocess.run(
                             ["node", "temp.js"],
-                            input=user_input + "\n",
+                            input=user_input,
                             capture_output=True,
                             text=True
                         )
