@@ -398,11 +398,13 @@ with st.sidebar:
     # NEW CHAT
     if st.button("➕ New Chat"):
 
-        st.session_state.messages = []
+     save_chat()
 
-        st.session_state.chat_id = datetime.now().strftime("%Y%m%d_%H%M%S")
+    st.session_state.messages = []
 
-        st.rerun()
+    st.session_state.chat_id = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+    st.rerun()
 
     st.divider()
 
