@@ -453,6 +453,40 @@ if st.button("➕ New Chat"):
         st.write("No chats found")
 
 # =========================
+    st.divider()
+
+    # SEARCH
+    search = st.text_input("🔍 Search Chats")
+
+    st.divider()
+
+    # PREVIOUS CHATS
+    st.subheader("🕘 Previous Chats")
+
+    all_chats = load_chats()
+
+    filtered_chats = [
+        c for c in all_chats
+        if search.lower() in c.lower()
+    ]
+
+    if filtered_chats:
+
+        for chat_file in filtered_chats:
+
+            chat_name = chat_file.replace(".json", "")
+
+            if st.button(f"💬 {chat_name}"):
+
+                st.session_state.messages = load_chat_file(chat_file)
+
+                st.session_state.chat_id = chat_name
+
+                st.rerun()
+
+    else:
+
+        st.write("No chats found")
 # CAPTION
 # =========================
 st.caption(
