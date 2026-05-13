@@ -1,11 +1,34 @@
 import streamlit as st
 from openai import OpenAI
+
 import subprocess
 import tempfile
-from duckduckgo_search import DDGS
 import json
 import os
+import time
+import base64
+
 from datetime import datetime
+from PIL import Image
+
+from duckduckgo_search import DDGS
+
+from selenium import webdriver
+
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.common.action_chains import ActionChains
+
+from selenium.webdriver.chrome.options import Options
+
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+
+
+
+
+
+
 
 # =========================
 # OPENAI CLIENT
@@ -122,8 +145,129 @@ def retrieve_project_memory(prompt):
             pass
 
     return relevant_memories[-10:]
+def analyze_image(uploaded_file, user_prompt):
+
+    image_bytes = uploaded_file.read()
+
+    base64_image = base64.b64encode(image_bytes).decode("utf-8")
+
+    response = client.chat.completions.create(
+        model="gpt-4.1-mini",
+        messages=[
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": user_prompt
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:image/jpeg;base64,{base64_image}"
+                        }
+                    }
+                ]
+            }
+        ]
+    )
+
+    return response.choices[0].message.content
 
 # =========================
+
+# =========================
+
+       
+
+# =========================
+# ADVANCED AI AGENT
+# =========================
+def browser_agent(task):
+
+    options = Options()
+
+    options.add_argument("--headless")
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
+
+    driver = webdriver.Chrome(options=options)
+
+    result = ""
+    attempt_logs = []
+
+    try:
+
+        # OPEN GOOGLE
+        driver.get("https://www.google.com")
+
+        time.sleep(2)
+
+        # SEARCH BOX
+        search_box = driver.find_element(By.NAME, "q")
+
+        search_box.send_keys(task)
+
+        search_box.send_keys(Keys.RETURN)
+
+        time.sleep(3)
+
+        # CLICK FIRST RESULT
+        links = driver.find_elements(By.TAG_NAME, "h3")
+
+        if links:
+
+            links[0].click()
+
+            time.sleep(3)
+
+        # AUTO BUTTON CLICK
+        buttons = driver.find_elements(By.TAG_NAME, "button")
+
+        for btn in buttons[:3]:
+
+            try:
+
+                btn.click()
+
+                time.sleep(1)
+
+            except:
+                pass
+
+        # AUTO FORM FILL
+        inputs = driver.find_elements(By.TAG_NAME, "input")
+
+        for inp in inputs:
+
+            try:
+
+                inp.send_keys("AI Agent")
+
+            except:
+                pass
+
+        # SCREENSHOT
+        driver.save_screenshot("browser.png")
+
+        # PAGE DATA
+        result = driver.page_source[:7000]
+
+
+        driver.save_screenshot("browser.png")
+
+
+
+    except Exception as e:
+
+        result = str(e)
+
+    driver.quit()
+
+    return result
+
+
+
 # TOOL ROUTER
 # =========================
 def decide_tool(prompt):
@@ -324,7 +468,14 @@ for msg in st.session_state.messages:
 
         st.markdown(msg["content"])
 
+
 # =========================
+# FILE UPLOADER
+# =========================
+uploaded_file = st.file_uploader(
+    "Upload Image or File",
+    type=["png", "jpg", "jpeg", "pdf", "txt", "py", "java", "js"]
+)
 # USER INPUT
 # =========================
 prompt = st.chat_input("Ask anything...")
@@ -333,6 +484,23 @@ prompt = st.chat_input("Ask anything...")
 # MAIN LOGIC
 # =========================
 if prompt:
+
+    if uploaded_file is not None:
+
+        file_type = uploaded_file.type
+
+        if "image" in file_type:
+
+            st.image(uploaded_file, width=300)
+
+            result = analyze_image(
+                uploaded_file,
+                prompt
+            )
+
+            st.write(result)
+
+            st.stop()
 
     # PROJECT DETECTION
     detect_prompt = f"""
@@ -382,6 +550,50 @@ Return short project name only.
     selected_tool = decide_tool(prompt)
 
     # =========================
+   
+# =========================
+# REAL BROWSER AGENT
+# =========================
+if any(x in prompt.lower() for x in [
+
+    "open website",
+    "login",
+    "fill form",
+    "upload file",
+    "browser",
+    "search website",
+    "click website"
+
+]):
+
+    with st.spinner("AI Browser Agent Running..."):
+
+        browser_result = browser_agent(prompt)
+
+        st.session_state.messages.append({
+            "role": "assistant",
+            "content": browser_result
+        })
+
+        with st.chat_message("assistant"):
+
+            st.markdown(browser_result)
+
+    st.stop()
+
+
+    # =========================
+# BROWSER TASK
+# =========================
+if "open browser" in prompt.lower() or "search website" in prompt.lower():
+
+    with st.spinner("Browser Agent Running..."):
+
+        browser_result = browser_agent(prompt)
+
+        st.write(browser_result)
+
+    st.stop()
     # DAILY REPORT
     # =========================
     if "what did i do today" in prompt.lower():
