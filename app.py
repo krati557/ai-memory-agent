@@ -554,7 +554,7 @@ Return short project name only.
 # =========================
 # REAL BROWSER AGENT
 # =========================
-if any(x in prompt.lower() for x in [
+if prompt and any(x in prompt.lower() for x in [
 
     "open website",
     "login",
