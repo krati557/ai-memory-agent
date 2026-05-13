@@ -396,14 +396,14 @@ with st.sidebar:
     st.title("💬 Menu")
 
     # NEW CHAT
-    if st.button("➕ New Chat"):
+    # NEW CHAT
+if st.button("➕ New Chat"):
 
-      st.session_state.messages = []
+    st.session_state.messages = []
 
     st.session_state.chat_id = datetime.now().strftime("%Y%m%d_%H%M%S")
 
     st.rerun()
-
     st.divider()
 
     # SEARCH
