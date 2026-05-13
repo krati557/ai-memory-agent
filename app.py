@@ -360,6 +360,8 @@ def browser_agent(task):
 # =========================
 st.title("🤖 Autonomous AI Agent")
 
+
+
 # =========================
 # SIDEBAR
 # =========================
@@ -367,6 +369,7 @@ with st.sidebar:
 
     st.title("💬 Menu")
 
+    # NEW CHAT
     if st.button("➕ New Chat"):
 
         st.session_state.messages = []
@@ -381,12 +384,14 @@ with st.sidebar:
 
     st.divider()
 
+    # SEARCH
     search = st.text_input(
         "🔍 Search Chats"
     )
 
     st.divider()
 
+    # PREVIOUS CHATS
     st.subheader("🕘 Previous Chats")
 
     all_chats = load_chats()
@@ -407,7 +412,8 @@ with st.sidebar:
             )
 
             if st.button(
-                f"💬 {chat_name}"
+                f"💬 {chat_name}",
+                key=chat_name
             ):
 
                 st.session_state.messages = (
@@ -423,6 +429,7 @@ with st.sidebar:
     else:
 
         st.write("No chats found")
+
 
 # =========================
 # CAPTION
