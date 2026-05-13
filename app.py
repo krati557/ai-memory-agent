@@ -398,9 +398,7 @@ with st.sidebar:
     # NEW CHAT
     if st.button("➕ New Chat"):
 
-     save_chat()
-
-    st.session_state.messages = []
+      st.session_state.messages = []
 
     st.session_state.chat_id = datetime.now().strftime("%Y%m%d_%H%M%S")
 
