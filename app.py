@@ -585,7 +585,11 @@ if prompt and any(x in prompt.lower() for x in [
     # =========================
 # BROWSER TASK
 # =========================
-if "open browser" in prompt.lower() or "search website" in prompt.lower():
+if prompt and (
+    "open browser" in prompt.lower()
+    or
+    "search website" in prompt.lower()
+):
 
     with st.spinner("Browser Agent Running..."):
 
