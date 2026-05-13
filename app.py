@@ -403,6 +403,7 @@ with st.sidebar:
         if search.lower() in c.lower()
     ]
 
+
     if filtered_chats:
 
         for chat_file in filtered_chats:
@@ -411,24 +412,44 @@ with st.sidebar:
                 chat_file.replace(".json", "")
             )
 
-            if st.button(
-                f"💬 {chat_name}",
-                key=chat_name
-            ):
+            col1, col2 = st.columns([5, 1])
 
-                st.session_state.messages = (
-                    load_chat_file(chat_file)
-                )
+            # OPEN CHAT
+            with col1:
 
-                st.session_state.chat_id = (
-                    chat_name
-                )
+                if st.button(
 
-                st.rerun()
+                    f"💬 {chat_name}",
 
-    else:
+                    key=chat_name
+                ):
 
-        st.write("No chats found")
+                    st.session_state.messages = (
+                        load_chat_file(chat_file)
+                    )
+
+                    st.session_state.chat_id = (
+                        chat_name
+                    )
+
+                    st.rerun()
+
+            # DELETE CHAT
+            with col2:
+
+                if st.button(
+
+                    "❌",
+
+                    key=f"delete_{chat_name}"
+                ):
+
+                    os.remove(
+                        f"{CHAT_FOLDER}/{chat_file}"
+                    )
+
+                    st.rerun()
+
 
 
 # =========================
@@ -566,25 +587,40 @@ if prompt:
         st.stop()
 
     # =========================
+    
+    # =========================
     # DAILY REPORT
     # =========================
-    if "what did i do today" in prompt.lower():
+    if (
 
-        report = generate_daily_report()
+        "what i have done today" in prompt.lower()
 
-        st.session_state.messages.append({
+        or
 
-            "role": "assistant",
-            "content": report
-        })
+        "what did i do today" in prompt.lower()
 
-        save_chat()
+    ):
 
-        with st.chat_message("assistant"):
+        with st.spinner("Generating report..."):
 
-            st.markdown(report)
+            report = generate_daily_report()
+
+            st.session_state.messages.append({
+
+                "role": "assistant",
+
+                "content": report
+            })
+
+            save_chat()
+
+            with st.chat_message("assistant"):
+
+                st.markdown(report)
 
         st.stop()
+
+
 
     # =========================
     # TOOL ROUTER
